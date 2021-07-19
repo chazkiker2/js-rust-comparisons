@@ -1,74 +1,114 @@
-function demonstrating_promise_object() {
-    const myPromise = new Promise((resolve, reject) => {
-        // "producing code" -- this may take some time
-        resolve(4); // when successful
-        reject(new Error("Error")); // when error
+function main() {
+    // ------------------------------
+    // ## using `new Promise`
+    // ------------------------------
+
+    // resolved
+    new Promise((resolve) => resolve(42));
+
+    // rejected
+    new Promise((_, reject) => reject("Error"));
+
+    // rejected
+    new Promise(() => {
+        throw "Error";
     });
 
-    myPromise
-        .then(function (value) {
-            // The producing code for `myPromise` succeeded and resolved some value.
-            // So now we can do something with that successful value (like log it to the console!)
-            console.log(value);
-        })
-        .catch(function (error) {
-            // The producing code for `myPromise` failed and rejected with some Error object
-            // So now we can do something with that Error object (like log it to stderr!)
-            console.error(error);
-        })
-        .finally(function () {
-            // code in this block will run regardless of whether the promise resolved or rejected
-            console.log(
-                "The promise has settled——it either Resolved or Rejected... but it's definitely not pending."
-            );
-        });
-}
-
-async function no_await() {
-    return 10;
-}
-
-async function main() {
-    // console.log(no_await()); // Promise { 10 }
-    // console.log(await no_await()); // 10
-    // no_await().then(console.log); // 10;
-
-    // // prints `Promise { 10 }`
-    // console.log(Promise.resolve(10));
-
-    // prints `10`
-    console.log(await Promise.resolve(10).then());
-
-    // this prints `Promise { 10 }`
-    console.log(
-        (async function () {
-            return 10;
-        })()
-    );
-
-    // this prints `10`
-    console.log(
-        await (async function () {
-            return 10;
-        })()
-    );
-
-    Promise.resolve(10).then(console.log); // 10
-}
-
-// main()
-//     .catch(console.error)
-//     .finally(() => console.log("finished"));
-
-const promise = new Promise((resolve) => resolve(42));
-promise
-    .then((val) => {
-        console.log(`From first \`.then\`: ${val}`);
-        return val;
-    })
-    .then((val) => {
-        console.log(`From second \`.then\`: ${val}`);
-        return val;
+    // as soon as `resolve` or `reject` is executed, the `Promise` will settle accordingly
+    new Promise((resolve, reject) => {
+        setTimeout(() => resolve(42), 1000);
     });
 
-// console.log("B");
+    // ------------------------------
+    // ## Static Promise methods
+    // ------------------------------
+
+    // resolved
+    Promise.resolve(42);
+    // rejected
+    Promise.reject("Error");
+
+    // ------------------------------
+    // ## Then and Catch
+    // ------------------------------
+
+    // resolved -> resolved
+    Promise.resolve().then(() => 42);
+    // rejected -> rejected
+    Promise.reject().catch(() => Promise.reject("Error"));
+    // rejected -> rejected
+    Promise.reject().catch(() => {
+        throw "Error";
+    });
+
+    // The `then` method on a rejected Promise and the `catch` method on a resolved Promise also return a new Promise. They just don't execute the callbacks and are equivalent to the original Promise.
+
+    // stays resolved (42)
+    Promise.resolve(42).catch(() => "Error");
+    // stays rejected ("Error")
+    Promise.reject("Error").then(() => 42);
+
+    // Note: While the value stays the same, the method returns a new Promise object and they are not considered equal.
+
+    // resolved (42)
+    const p1 = Promise.resolve(42);
+    // resolved (42)
+    const p2 = p1.catch(() => "pass");
+    let trip_eq = p1 === p2; // false
+    let dub_eq = p1 == p2; // false
+
+    // ------------------------------
+    // ## Transfer Resolved to Rejected (and vice versa)
+    // ------------------------------
+
+    // rejected -> resolved
+    Promise.reject().catch(() => 42);
+    Promise.reject().catch(() => Promise.resolve(42));
+    // resolved -> rejected
+    Promise.resolve().then(() => Promise.reject("Error"));
+    Promise.resolve().then(() => {
+        throw "Error";
+    });
+
+    // ------------------------------
+    // ## Async / Await
+    // ------------------------------
+
+    // returns resolved (42)
+    async function named_async_resolve() {
+        return 42;
+    }
+    // returns resolved (42)
+    const arrow_async_resolve = async () => 42;
+    // returns rejected ("Error")
+    async function named_async_reject() {
+        return Promise.reject("Error");
+    }
+    const arrow_async_reject = async () => {
+        throw "Error";
+    };
+
+    // ------------------------------
+    // ## Then-ables
+    // ------------------------------
+
+    // resolved (42)
+    Promise.resolve({ then: (resolve) => resolve(42) });
+    // rejected ("Error")
+    Promise.resolve({ then: (_, reject) => reject("Error") });
+
+    async function await_blocks() {
+        // treated as a Promise, resolves to (42)
+        let x = await {
+            then(resolve) {
+                resolve(888);
+            },
+        };
+        // treated as a Promise, rejects to "Error"
+        let y = await {
+            then(_, reject) {
+                reject("Error");
+            },
+        };
+    }
+}

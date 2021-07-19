@@ -1,0 +1,7 @@
+{
+    "editor.tabSize": 4,
+    "prettier.configPath": "./async-js/.prettierrc.js",
+    "cSpell.words": [
+        "oneshot"
+    ]
+}
